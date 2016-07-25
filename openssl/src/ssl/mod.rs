@@ -565,6 +565,7 @@ impl SslContext {
         let ctx = try_ssl_null!(unsafe { ffi::SSL_CTX_new(method.to_raw()) });
 
         let ctx = SslContext { ctx: ctx };
+        try!(ctx.set_mode(ffi::SSL_MODE_AUTO_RETRY | ffi::SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER));
 
         if method.is_dtls() {
             ctx.set_read_ahead(1);
@@ -648,8 +649,12 @@ impl SslContext {
         }
     }
 
+    fn set_mode(&self, mode: c_long) -> Result<(), SslError> {
+        wrap_ssl_result(unsafe { ffi_extras::SSL_CTX_set_mode(self.ctx, mode) as c_int })
+    }
+
     pub fn set_tmp_dh(&self, dh: DH) -> Result<(), SslError> {
-        wrap_ssl_result(unsafe { ffi_extras::SSL_CTX_set_tmp_dh(self.ctx, dh.raw()) as i32 })
+        wrap_ssl_result(unsafe { ffi_extras::SSL_CTX_set_tmp_dh(self.ctx, dh.raw()) as c_int })
     }
 
     /// Use the default locations of trusted certificates for verification.
